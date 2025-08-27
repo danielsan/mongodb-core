@@ -6,7 +6,7 @@ var f = require('util').format
 
 exports['Should correctly execute insert culling undefined'] = {
   metadata: {
-    requires: { topology: ["single", "replicaset", "mongos"] }
+    requires: { topology: ["single", "replicaset", "sharded"] }
   },
 
   test: function(configuration, test) {
@@ -63,7 +63,7 @@ exports['Should correctly execute insert culling undefined'] = {
 
 exports['Should correctly execute update culling undefined'] = {
   metadata: {
-    requires: { topology: ["single", "replicaset", "mongos"] }
+    requires: { topology: ["single", "replicaset", "sharded"] }
   },
 
   test: function(configuration, test) {
@@ -112,7 +112,7 @@ exports['Should correctly execute update culling undefined'] = {
 
 exports['Should correctly execute remove culling undefined'] = {
   metadata: {
-    requires: { topology: ["single", "replicaset", "mongos"] }
+    requires: { topology: ["single", "replicaset", "sharded"] }
   },
 
   test: function(configuration, test) {
@@ -158,7 +158,7 @@ exports['Should correctly execute remove culling undefined'] = {
 
 exports['Should correctly execute remove not culling undefined'] = {
   metadata: {
-    requires: { topology: ["single", "replicaset", "mongos"] }
+    requires: { topology: ["single", "replicaset", "sharded"], mongodb: ">=2.6.0" }
   },
 
   test: function(configuration, test) {
@@ -179,7 +179,7 @@ exports['Should correctly execute remove not culling undefined'] = {
 
             // Execute the write
             _server.remove(ns, [{
-              q: {b:undefined}, limit: 0
+              q: {b:null}, limit: 0
             }], {
               writeConcern: {w:1}, ordered:true
             }, function(err, results) {

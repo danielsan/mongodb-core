@@ -1,18 +1,5 @@
 "use strict";
-
-// Extend the object
-var extend = function(template, fields) {
-  var object = {};
-  for(var name in template) {
-    object[name] = template[name];
-  }
-
-  for(var name in fields) {
-   object[name] = fields[name];
-  }
-
-  return object;
-}
+var assign = require('../../../../lib/utils').assign;
 
 exports['Successful emit SDAM monitoring events for replicaset'] = {
   metadata: {
@@ -46,29 +33,29 @@ exports['Successful emit SDAM monitoring events for replicaset'] = {
     }
 
     // Primary server states
-    var primary = [extend(defaultFields, {
+    var primary = [assign({}, defaultFields, {
       "ismaster":true, "secondary":false, "me": "localhost:32000", "primary": "localhost:32000", "tags" : { "loc" : "ny" }
-    }), extend(defaultFields, {
+    }), assign({}, defaultFields, {
       "ismaster":false, "secondary":true, "me": "localhost:32000", "primary": "localhost:32000", "tags" : { "loc" : "ny" }
-    }), extend(defaultFields, {
+    }), assign({}, defaultFields, {
       "ismaster":false, "secondary":true, "me": "localhost:32000", "primary": "localhost:32001", "tags" : { "loc" : "ny" }
     })];
 
     // Primary server states
-    var firstSecondary = [extend(defaultFields, {
+    var firstSecondary = [assign({}, defaultFields, {
       "ismaster":false, "secondary":true, "me": "localhost:32001", "primary": "localhost:32000", "tags" : { "loc" : "sf" }
-    }), extend(defaultFields, {
+    }), assign({}, defaultFields, {
       "ismaster":false, "secondary":true, "me": "localhost:32001", "primary": "localhost:32000", "tags" : { "loc" : "sf" }
-    }), extend(defaultFields, {
+    }), assign({}, defaultFields, {
       "ismaster":true, "secondary":false, "me": "localhost:32001", "primary": "localhost:32001", "tags" : { "loc" : "sf" }
     })];
 
     // Primary server states
-    var arbiter = [extend(defaultFields, {
+    var arbiter = [assign({}, defaultFields, {
       "ismaster":false, "secondary":false, "arbiterOnly": true, "me": "localhost:32002", "primary": "localhost:32000"
-    }), extend(defaultFields, {
+    }), assign({}, defaultFields, {
       "ismaster":false, "secondary":false, "arbiterOnly": true, "me": "localhost:32002", "primary": "localhost:32000"
-    }), extend(defaultFields, {
+    }), assign({}, defaultFields, {
       "ismaster":false, "secondary":false, "arbiterOnly": true, "me": "localhost:32002", "primary": "localhost:32001"
     })];
 
@@ -89,7 +76,7 @@ exports['Successful emit SDAM monitoring events for replicaset'] = {
           }
         }
       }).catch(function(err) {
-        console.log(err.stack);
+        // console.log(err.stack);
       });
 
       // First secondary state machine
@@ -103,7 +90,7 @@ exports['Successful emit SDAM monitoring events for replicaset'] = {
           }
         }
       }).catch(function(err) {
-        console.log(err.stack);
+        // console.log(err.stack);
       });
 
       // Second secondary state machine
@@ -117,7 +104,7 @@ exports['Successful emit SDAM monitoring events for replicaset'] = {
           }
         }
       }).catch(function(err) {
-        console.log(err.stack);
+        // console.log(err.stack);
       });
     });
 
@@ -194,9 +181,9 @@ exports['Successful emit SDAM monitoring events for replicaset'] = {
       // console.log(JSON.stringify(event, null, 2))
     });
 
-    server.on('serverHearbeatFailed', function(event) {
+    server.on('serverHeartbeatFailed', function(event) {
       add({type: 'serverHeartbeatFailed', event: event});
-      // console.log("----------------------------- serverHearbeatFailed")
+      // console.log("----------------------------- serverHeartbeatFailed")
       // console.log(JSON.stringify(event, null, 2))
     });
 
@@ -238,6 +225,10 @@ exports['Successful emit SDAM monitoring events for replicaset'] = {
                 }
               }
 
+              running = false;
+              primaryServer.destroy();
+              firstSecondaryServer.destroy();
+              arbiterServer.destroy();
               test.done();
             }, 1000);
           }, 2000);
@@ -275,7 +266,13 @@ exports['Successful emit SDAM monitoring events for replicaset'] = {
         ]
       },
       "diff": {
-        "servers": []
+        "servers": [
+          {
+            "address": "localhost:32000",
+            "from": "Unknown",
+            "to": "RSPrimary"
+          }
+        ]
       }
     };
 
@@ -330,7 +327,13 @@ exports['Successful emit SDAM monitoring events for replicaset'] = {
         ]
       },
       "diff": {
-        "servers": []
+        "servers": [
+          {
+            "address": "localhost:32001",
+            "from": "Unknown",
+            "to": "RSSecondary"
+          }
+        ]
       }
     };
 
@@ -409,7 +412,13 @@ exports['Successful emit SDAM monitoring events for replicaset'] = {
         ]
       },
       "diff": {
-        "servers": []
+        "servers": [
+          {
+            "address": "localhost:32002",
+            "from": "Unknown",
+            "to": "RSArbiter"
+          }
+        ]
       }
     };
 

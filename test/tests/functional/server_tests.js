@@ -8,7 +8,7 @@ exports['Should correctly connect server to single instance'] = {
 
   test: function(configuration, test) {
     var Server = require('../../../lib/topologies/server')
-      , bson = require('bson').BSONPure.BSON;
+      , bson = require('bson');
 
     // Attempt to connect
     var server = new Server({
@@ -33,7 +33,7 @@ exports['Should correctly connect server to single instance and execute ismaster
 
   test: function(configuration, test) {
     var Server = require('../../../lib/topologies/server')
-      , bson = require('bson').BSONPure.BSON;
+      , bson = require('bson');
 
     // Attempt to connect
     var server = new Server({
@@ -64,7 +64,7 @@ exports['Should correctly connect server to single instance and execute ismaster
 
   test: function(configuration, test) {
     var Server = require('../../../lib/topologies/server')
-      , bson = require('bson').BSONPure.BSON;
+      , bson = require('bson');
 
     // Attempt to connect
     var server = new Server({
@@ -97,7 +97,7 @@ exports['Should correctly connect server to single instance and execute insert']
 
   test: function(configuration, test) {
     var Server = require('../../../lib/topologies/server')
-      , bson = require('bson').BSONPure.BSON;
+      , bson = require('bson');
 
     // Attempt to connect
     var server = new Server({
@@ -132,7 +132,7 @@ exports['Should correctly connect server to single instance and execute bulk ins
 
   test: function(configuration, test) {
     var Server = require('../../../lib/topologies/server')
-      , bson = require('bson').BSONPure.BSON;
+      , bson = require('bson');
 
     // Attempt to connect
     var server = new Server({
@@ -167,7 +167,7 @@ exports['Should correctly connect server to single instance and execute insert w
 
   test: function(configuration, test) {
     var Server = require('../../../lib/topologies/server')
-      , bson = require('bson').BSONPure.BSON;
+      , bson = require('bson');
 
     // Attempt to connect
     var server = new Server({
@@ -202,7 +202,7 @@ exports['Should correctly connect server to single instance and execute update']
 
   test: function(configuration, test) {
     var Server = require('../../../lib/topologies/server')
-      , bson = require('bson').BSONPure.BSON;
+      , bson = require('bson');
 
     // Attempt to connect
     var server = new Server({
@@ -236,7 +236,7 @@ exports['Should correctly connect server to single instance and execute remove']
 
   test: function(configuration, test) {
     var Server = require('../../../lib/topologies/server')
-      , bson = require('bson').BSONPure.BSON;
+      , bson = require('bson');
 
     // Attempt to connect
     var server = new Server({
@@ -280,7 +280,7 @@ exports['Should correctly recover with multiple restarts'] = {
   // The actual test we wish to run
   test: function(configuration, test) {
     var Server = require('../../../lib/topologies/server')
-      , bson = require('bson').BSONPure.BSON;
+      , bson = require('bson');
 
     var done = false;
 
@@ -375,6 +375,7 @@ exports['Should correctly reconnect to server with automatic reconnect enabled']
         host: configuration.host
       , port: configuration.port
       , reconnect: true
+      , size: 1
       , reconnectInterval: 50
     })
 
@@ -410,7 +411,6 @@ exports['Should correctly reconnect to server with automatic reconnect enabled']
     });
 
     server.once('reconnect', function() {
-      // console.log('!!!!!!!!!!! reconnect')
       test.equal(true, emittedClose);
       test.equal(true, server.isConnected());
       test.equal(30, server.s.pool.retriesLeft);
@@ -550,6 +550,7 @@ exports['Should correctly place new connections in available list on reconnect']
         host: configuration.host
       , port: configuration.port
       , reconnect: true
+      , size: 1
       , reconnectInterval: 50
     })
 
@@ -595,6 +596,167 @@ exports['Should correctly place new connections in available list on reconnect']
           test.done();
         }, 1000);
       });
+    });
+
+    // Start connection
+    server.connect();
+  }
+}
+
+exports['Should not overflow the poolSize due to concurrent operations'] = {
+  metadata: {
+    requires: {
+      topology: 'single'
+    },
+    ignore: { travis:true }
+  },
+
+  test: function(configuration, test) {
+    var Server = configuration.require.Server
+      , ReadPreference = configuration.require.ReadPreference
+      , manager = configuration.manager;
+
+    // Attempt to connect while server is down
+    var server = new Server({
+        host: configuration.host
+      , port: configuration.port
+      , reconnect: true
+      , reconnectTries: 2
+      , size: 50
+      , emitError: true
+    });
+
+    server.on('connect', function() {
+      var left = 5000;
+
+      for(var i = 0; i < 5000; i++) {
+        server.insert(f("%s.massInsertsTest", configuration.db), [{a:1}], {
+          writeConcern: {w:1}, ordered:true
+        }, function(err, results) {
+          left = left - 1;
+
+          if(!left) {
+            test.equal(50, server.connections().length);
+
+            test.done();
+            server.destroy();
+          }
+        });
+      }
+    });
+
+    server.connect();
+  }
+}
+
+exports['Should correctly connect execute 5 evals in parallel'] = {
+  metadata: { requires: { topology: "single" } },
+
+  test: function(configuration, test) {
+    var Server = require('../../../lib/topologies/server')
+      , bson = require('bson');
+
+    // Attempt to connect
+    var server = new Server({
+        host: configuration.host
+      , port: configuration.port
+      , size: 10
+      , bson: new bson()
+    })
+
+    // Add event listeners
+    server.on('connect', function(server) {
+      var left = 5;
+      var start = new Date().getTime();
+
+      for (var i = 0; i < left; i++) {
+        server.command('system.$cmd', {eval: 'sleep(100);'}, function(err, r) {
+          left = left - 1;
+
+          if(left == 0) {
+            var total = new Date().getTime() - start;
+            test.ok(total >= 5*100 && total <= 1000);
+
+            server.destroy();
+            test.done();
+          }
+        });
+      }
+    });
+
+    // Start connection
+    server.connect();
+  }
+}
+
+exports['Should correctly promoteValues when calling getMore on queries'] = {
+  metadata: {
+    requires: {
+      node: ">0.8.0",
+      topology: ['single', 'ssl', 'wiredtiger']
+    }
+  },
+
+  // The actual test we wish to run
+  test: function(configuration, test) {
+    var Server = require('../../../lib/topologies/server')
+      , bson = require('bson');
+
+    // Attempt to connect
+    var server = new Server({
+        host: configuration.host
+      , port: configuration.port
+      , size: 10
+      , bson: new bson()
+    });
+    // Namespace
+    var ns = 'integration_tests.remove_example';
+
+    // Add event listeners
+    server.on('connect', function(server) {
+      var docs = new Array(150).fill(0).map(function(_, i) {
+        return {
+          _id: 'needle_' + i,
+          is_even: i % 2,
+          long: bson.Long.fromString('1234567890'),
+          double: 0.23456,
+          int: 1234
+        };
+      });
+
+      server.insert(ns, docs, function(err, r) {
+        test.equal(null, err);
+        test.equal(true, r.result.ok);
+
+        // Execute find
+        var cursor = server.cursor(ns, {
+            find: ns
+          , query: {}
+          , limit: 102          
+        }, {
+          promoteValues: false
+        });
+
+        function callNext(cursor) {
+          cursor.next(function(err, doc) {
+            if(!doc) {
+              return test.done();
+            }
+
+            test.equal(typeof doc.int, 'object');
+            test.equal(doc.int._bsontype, 'Int32');
+            test.equal(typeof doc.long, 'object');
+            test.equal(doc.long._bsontype, 'Long');
+            test.equal(typeof doc.double, 'object');
+            test.equal(doc.double._bsontype, 'Double');          
+
+            // Call next
+            callNext(cursor);
+          });
+        }
+
+        callNext(cursor);
+      });        
     });
 
     // Start connection

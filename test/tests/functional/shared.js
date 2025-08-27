@@ -2,7 +2,7 @@ function executeCommand(configuration, db, cmd, options, cb) {
   var Pool = require('../../../lib/connection/pool')
     , f = require('util').format
     , MongoError = require('../../../lib/error')
-    , bson = require('bson').BSONPure.BSON
+    , bson = require('bson')
     , Query = require('../../../lib/connection/commands').Query;
 
   // Optional options
@@ -22,7 +22,9 @@ function executeCommand(configuration, db, cmd, options, cb) {
   // Add event listeners
   pool.on('connect', function(_pool) {
     var query = new Query(new bson(), f('%s.$cmd', db), cmd, {numberToSkip: 0, numberToReturn: 1});
-    _pool.write(query.toBin(), {command:true}, function(err, result) {
+    _pool.write(query, {
+      command:true
+    }, function(err, result) {
       if(err) console.log(err.stack)
       // Close the pool
       _pool.destroy();
@@ -39,7 +41,7 @@ function executeCommand(configuration, db, cmd, options, cb) {
 function locateAuthMethod(configuration, cb) {
   var Pool = require('../../../lib/connection/pool')
     , MongoError = require('../../../lib/error')
-    , bson = require('bson').BSONPure.BSON
+    , bson = require('bson')
     , f = require('util').format
     , Query = require('../../../lib/connection/commands').Query;
 
@@ -55,7 +57,9 @@ function locateAuthMethod(configuration, cb) {
   // Add event listeners
   pool.on('connect', function(_pool) {
     var query = new Query(new bson(), f('%s.$cmd', db), cmd, {numberToSkip: 0, numberToReturn: 1});
-    _pool.write(query.toBin(), {command:true}, function(err, result) {
+    _pool.write(query, {
+      command:true
+    }, function(err, result) {
       if(err) console.log(err.stack)
       // Close the pool
       _pool.destroy();

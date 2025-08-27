@@ -1,3 +1,6 @@
+"use strict";
+var assign = require('../../../../lib/utils').assign;
+
 var timeoutPromise = function(timeout) {
   return new Promise(function(resolve, reject) {
     setTimeout(function() {
@@ -29,12 +32,6 @@ exports['Should correctly failover due to proxy going away causing timeout'] = {
     // Primary stop responding
     var stopRespondingPrimary = false;
 
-    // Extend the object
-    var extend = function(template, fields) {
-      for(var name in template) fields[name] = template[name];
-      return fields;
-    }
-
     // Default message fields
     var defaultFields = {
       "ismaster" : true,
@@ -49,11 +46,11 @@ exports['Should correctly failover due to proxy going away causing timeout'] = {
     }
 
     // Primary server states
-    var serverIsMaster = [extend(defaultFields, {})];
+    var serverIsMaster = [ assign({}, defaultFields) ];
     // Boot the mock
     co(function*() {
-      mongos1 = yield mockupdb.createServer(52000, 'localhost');
-      mongos2 = yield mockupdb.createServer(52001, 'localhost');
+      mongos1 = yield mockupdb.createServer(52007, 'localhost');
+      mongos2 = yield mockupdb.createServer(52008, 'localhost');
 
       // Mongos
       co(function*() {
@@ -69,6 +66,7 @@ exports['Should correctly failover due to proxy going away causing timeout'] = {
             request.reply({ok:1, n:doc.documents, lastOp: new Date()});
           }
         }
+      }).catch(function(err) {
       });
 
       // Mongos
@@ -84,19 +82,20 @@ exports['Should correctly failover due to proxy going away causing timeout'] = {
             request.reply({ok:1, n:doc.documents, lastOp: new Date()});
           }
         }
+      }).catch(function(err) {
       });
 
       // Start dropping the packets
       setTimeout(function() {
         stopRespondingPrimary = true;
-        currentIsMasterState = 1;
       }, 5000);
+    }).catch(function(err) {
     });
 
     // Attempt to connect
     var server = new Mongos([
-        { host: 'localhost', port: 52000 },
-        { host: 'localhost', port: 52001 },
+        { host: 'localhost', port: 52007 },
+        { host: 'localhost', port: 52008 },
       ], {
       connectionTimeout: 3000,
       socketTimeout: 5000,
@@ -112,7 +111,7 @@ exports['Should correctly failover due to proxy going away causing timeout'] = {
           // validate that it's the expected proxy
           if(r) {
             clearInterval(intervalId);
-            test.equal(52001, r.connection.port);
+            test.equal(52008, r.connection.port);
             server.destroy();
             mongos1.destroy();
             mongos2.destroy();
@@ -124,7 +123,7 @@ exports['Should correctly failover due to proxy going away causing timeout'] = {
     });
 
     server.on('error', function(){});
-    server.connect();
+    setTimeout(function() { server.connect(); }, 100);
   }
 }
 
@@ -151,12 +150,6 @@ exports['Should correctly bring back proxy and use it'] = {
     // Primary stop responding
     var stopRespondingPrimary = false;
 
-    // Extend the object
-    var extend = function(template, fields) {
-      for(var name in template) fields[name] = template[name];
-      return fields;
-    }
-
     // Default message fields
     var defaultFields = {
       "ismaster" : true,
@@ -171,11 +164,11 @@ exports['Should correctly bring back proxy and use it'] = {
     }
 
     // Primary server states
-    var serverIsMaster = [extend(defaultFields, {})];
+    var serverIsMaster = [ assign({}, defaultFields) ];
     // Boot the mock
     co(function*() {
-      mongos1 = yield mockupdb.createServer(52000, 'localhost');
-      mongos2 = yield mockupdb.createServer(52001, 'localhost');
+      mongos1 = yield mockupdb.createServer(52009, 'localhost');
+      mongos2 = yield mockupdb.createServer(52010, 'localhost');
 
       // Mongos
       co(function*() {
@@ -193,6 +186,7 @@ exports['Should correctly bring back proxy and use it'] = {
             request.reply({ok:1, n:doc.documents, lastOp: new Date()});
           }
         }
+      }).catch(function(err) {
       });
 
       // Mongos
@@ -208,19 +202,20 @@ exports['Should correctly bring back proxy and use it'] = {
             request.reply({ok:1, n:doc.documents, lastOp: new Date()});
           }
         }
+      }).catch(function(err) {
       });
 
       // Start dropping the packets
       setTimeout(function() {
         stopRespondingPrimary = true;
-        currentIsMasterState = 1;
       }, 5000);
+    }).catch(function(err) {
     });
 
     // Attempt to connect
     var server = new Mongos([
-        { host: 'localhost', port: 52000 },
-        { host: 'localhost', port: 52001 },
+        { host: 'localhost', port: 52009 },
+        { host: 'localhost', port: 52010 },
       ], {
       connectionTimeout: 3000,
       socketTimeout: 1500,
@@ -240,7 +235,7 @@ exports['Should correctly bring back proxy and use it'] = {
           if(r) {
             // console.log("====================================== 3 :: " + r.connection.port)
             clearInterval(intervalId);
-            test.equal(52001, r.connection.port);
+            test.equal(52010, r.connection.port);
 
             // Proxies seen
             var proxies = {};
@@ -275,7 +270,7 @@ exports['Should correctly bring back proxy and use it'] = {
     });
 
     server.on('error', function(){});
-    server.connect();
+    setTimeout(function() { server.connect(); }, 100);
   }
 }
 
@@ -302,12 +297,6 @@ exports['Should correctly bring back both proxies and use it'] = {
     // Primary stop responding
     var stopRespondingPrimary = false;
 
-    // Extend the object
-    var extend = function(template, fields) {
-      for(var name in template) fields[name] = template[name];
-      return fields;
-    }
-
     // Default message fields
     var defaultFields = {
       "ismaster" : true,
@@ -322,11 +311,11 @@ exports['Should correctly bring back both proxies and use it'] = {
     }
 
     // Primary server states
-    var serverIsMaster = [extend(defaultFields, {})];
+    var serverIsMaster = [ assign({}, defaultFields) ];
     // Boot the mock
     co(function*() {
-      mongos1 = yield mockupdb.createServer(52000, 'localhost');
-      mongos2 = yield mockupdb.createServer(52001, 'localhost');
+      mongos1 = yield mockupdb.createServer(52011, 'localhost');
+      mongos2 = yield mockupdb.createServer(52012, 'localhost');
 
       // Mongos
       co(function*() {
@@ -344,6 +333,7 @@ exports['Should correctly bring back both proxies and use it'] = {
             request.reply({ok:1, n:doc.documents, lastOp: new Date()});
           }
         }
+      }).catch(function(err) {
       });
 
       // Mongos
@@ -362,19 +352,20 @@ exports['Should correctly bring back both proxies and use it'] = {
             request.reply({ok:1, n:doc.documents, lastOp: new Date()});
           }
         }
+      }).catch(function(err) {
       });
 
       // Start dropping the packets
       setTimeout(function() {
         stopRespondingPrimary = true;
-        currentIsMasterState = 1;
       }, 1000);
+    }).catch(function(err) {
     });
 
     // Attempt to connect
     var server = new Mongos([
-        { host: 'localhost', port: 52000 },
-        { host: 'localhost', port: 52001 },
+        { host: 'localhost', port: 52011 },
+        { host: 'localhost', port: 52012 },
       ], {
       connectionTimeout: 3000,
       socketTimeout: 500,
@@ -423,6 +414,6 @@ exports['Should correctly bring back both proxies and use it'] = {
     });
 
     server.on('error', function(){});
-    server.connect();
+    setTimeout(function() { server.connect(); }, 100);
   }
 }

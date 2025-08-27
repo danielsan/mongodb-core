@@ -1,3 +1,6 @@
+"use strict";
+var assign = require('../../../../lib/utils').assign;
+
 exports['Should correctly set query and readpreference field on wire protocol for 3.2'] = {
   metadata: {
     requires: {
@@ -23,12 +26,6 @@ exports['Should correctly set query and readpreference field on wire protocol fo
     // Primary stop responding
     var stopRespondingPrimary = false;
 
-    // Extend the object
-    var extend = function(template, fields) {
-      for(var name in template) fields[name] = template[name];
-      return fields;
-    }
-
     // Default message fields
     var defaultFields = {
       "ismaster" : true,
@@ -43,12 +40,12 @@ exports['Should correctly set query and readpreference field on wire protocol fo
     }
 
     // Primary server states
-    var serverIsMaster = [extend(defaultFields, {})];
+    var serverIsMaster = [ assign({}, defaultFields) ];
     // Received command on server
     var command = null;
     // Boot the mock
     co(function*() {
-      mongos1 = yield mockupdb.createServer(52000, 'localhost');
+      mongos1 = yield mockupdb.createServer(52013, 'localhost');
 
       // Mongos
       co(function*() {
@@ -73,18 +70,19 @@ exports['Should correctly set query and readpreference field on wire protocol fo
             });
           }
         }
+      }).catch(function(err) {
       });
 
       // Start dropping the packets
       setTimeout(function() {
         stopRespondingPrimary = true;
-        currentIsMasterState = 1;
       }, 5000);
+    }).catch(function(err) {
     });
 
     // Attempt to connect
     var server = new Mongos([
-        { host: 'localhost', port: 52000 }
+        { host: 'localhost', port: 52013 }
       ], {
       connectionTimeout: 3000,
       socketTimeout: 5000,
@@ -122,7 +120,7 @@ exports['Should correctly set query and readpreference field on wire protocol fo
     });
 
     server.on('error', function(){});
-    server.connect();
+    setTimeout(function() { server.connect(); }, 100);
   }
 }
 
@@ -151,12 +149,6 @@ exports['Should correctly set query and near readpreference field on wire protoc
     // Primary stop responding
     var stopRespondingPrimary = false;
 
-    // Extend the object
-    var extend = function(template, fields) {
-      for(var name in template) fields[name] = template[name];
-      return fields;
-    }
-
     // Default message fields
     var defaultFields = {
       "ismaster" : true,
@@ -171,12 +163,12 @@ exports['Should correctly set query and near readpreference field on wire protoc
     }
 
     // Primary server states
-    var serverIsMaster = [extend(defaultFields, {})];
+    var serverIsMaster = [ assign({}, defaultFields) ];
     // Received command on server
     var command = null;
     // Boot the mock
     co(function*() {
-      mongos1 = yield mockupdb.createServer(52000, 'localhost');
+      mongos1 = yield mockupdb.createServer(52014, 'localhost');
 
       // Mongos
       co(function*() {
@@ -201,18 +193,19 @@ exports['Should correctly set query and near readpreference field on wire protoc
             });
           }
         }
+      }).catch(function(err) {
       });
 
       // Start dropping the packets
       setTimeout(function() {
         stopRespondingPrimary = true;
-        currentIsMasterState = 1;
       }, 5000);
+    }).catch(function(err) {
     });
 
     // Attempt to connect
     var server = new Mongos([
-        { host: 'localhost', port: 52000 }
+        { host: 'localhost', port: 52014 }
       ], {
       connectionTimeout: 3000,
       socketTimeout: 5000,
@@ -251,7 +244,7 @@ exports['Should correctly set query and near readpreference field on wire protoc
     });
 
     server.on('error', function(){});
-    server.connect();
+    setTimeout(function() { server.connect(); }, 100);
   }
 }
 
@@ -276,12 +269,6 @@ exports['Should correctly set query and readpreference field on wire protocol fo
     var mongos2 = null;
     var running = true;
 
-    // Extend the object
-    var extend = function(template, fields) {
-      for(var name in template) fields[name] = template[name];
-      return fields;
-    }
-
     // Default message fields
     var defaultFields = {
       "ismaster" : true,
@@ -296,12 +283,12 @@ exports['Should correctly set query and readpreference field on wire protocol fo
     }
 
     // Primary server states
-    var serverIsMaster = [extend(defaultFields, {})];
+    var serverIsMaster = [ assign({}, defaultFields) ];
     // Received command on server
     var command = null;
     // Boot the mock
     co(function*() {
-      mongos1 = yield mockupdb.createServer(52000, 'localhost');
+      mongos1 = yield mockupdb.createServer(52015, 'localhost');
 
       // Mongos
       co(function*() {
@@ -318,13 +305,15 @@ exports['Should correctly set query and readpreference field on wire protocol fo
             request.reply([]);
           }
         }
+      }).catch(function(err) {
       });
+    }).catch(function(err) {
     });
 
     // console.log("----------------------- -3")
     // Attempt to connect
     var server = new Mongos([
-        { host: 'localhost', port: 52000 }
+        { host: 'localhost', port: 52015 }
       ], {
       connectionTimeout: 3000,
       socketTimeout: 5000,
@@ -366,7 +355,7 @@ exports['Should correctly set query and readpreference field on wire protocol fo
     });
 
     server.on('error', function(){});
-    server.connect();
+    setTimeout(function() { server.connect(); }, 100);
   }
 }
 
@@ -395,12 +384,6 @@ exports['Should correctly set query and readpreference field on wire protocol fo
     // Primary stop responding
     var stopRespondingPrimary = false;
 
-    // Extend the object
-    var extend = function(template, fields) {
-      for(var name in template) fields[name] = template[name];
-      return fields;
-    }
-
     // Default message fields
     var defaultFields = {
       "ismaster" : true,
@@ -413,12 +396,12 @@ exports['Should correctly set query and readpreference field on wire protocol fo
     }
 
     // Primary server states
-    var serverIsMaster = [extend(defaultFields, {})];
+    var serverIsMaster = [ assign({}, defaultFields) ];
     // Received command on server
     var command = null;
     // Boot the mock
     co(function*() {
-      mongos1 = yield mockupdb.createServer(52000, 'localhost');
+      mongos1 = yield mockupdb.createServer(52016, 'localhost');
 
       // Mongos
       co(function*() {
@@ -435,18 +418,19 @@ exports['Should correctly set query and readpreference field on wire protocol fo
             request.reply([]);
           }
         }
+      }).catch(function(err) {
       });
 
       // Start dropping the packets
       setTimeout(function() {
         stopRespondingPrimary = true;
-        currentIsMasterState = 1;
       }, 5000);
+    }).catch(function(err) {
     });
 
     // Attempt to connect
     var server = new Mongos([
-        { host: 'localhost', port: 52000 }
+        { host: 'localhost', port: 52016 }
       ], {
       connectionTimeout: 3000,
       socketTimeout: 5000,
@@ -486,6 +470,6 @@ exports['Should correctly set query and readpreference field on wire protocol fo
     });
 
     server.on('error', function(){});
-    server.connect();
+    setTimeout(function() { server.connect(); }, 100);
   }
 }

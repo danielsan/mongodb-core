@@ -10,7 +10,7 @@ exports['Should fail to authenticate server using scram-sha-1 using connect auth
   test: function(configuration, test) {
     var Server = require('../../../lib/topologies/server')
       , Connection = require('../../../lib/connection/connection')
-      , bson = require('bson').BSONPure.BSON
+      , bson = require('bson')
       , Query = require('../../../lib/connection/commands').Query;
 
     // Enable connections accounting
@@ -53,7 +53,7 @@ exports['Should correctly authenticate server using scram-sha-1 using connect au
   test: function(configuration, test) {
     var Server = require('../../../lib/topologies/server')
       , Connection = require('../../../lib/connection/connection')
-      , bson = require('bson').BSONPure.BSON
+      , bson = require('bson')
       , Query = require('../../../lib/connection/commands').Query;
 
     // Enable connections accounting
@@ -82,7 +82,7 @@ exports['Should correctly authenticate server using scram-sha-1 using connect au
             }, { auth: [method, 'admin', 'root', 'root']}, function(err, r) {
               test.equal(null, err);
 
-              _server.destroy();
+              _server.destroy({force:true});
               // console.log("=================== " + Object.keys(Connection.connections()).length)
               test.equal(0, Object.keys(Connection.connections()).length);
               Connection.disableConnectionAccounting();
@@ -103,7 +103,7 @@ exports['Should correctly authenticate server using scram-sha-1 using connect au
   test: function(configuration, test) {
     var Server = require('../../../lib/topologies/server')
       , Connection = require('../../../lib/connection/connection')
-      , bson = require('bson').BSONPure.BSON
+      , bson = require('bson')
       , Query = require('../../../lib/connection/commands').Query;
 
     // Enable connections accounting
@@ -141,7 +141,7 @@ exports['Should correctly authenticate server using scram-sha-1 using connect au
               if(index == 100) {
                 test.equal(5, server.s.pool.socketCount());
 
-                server.destroy();
+                server.destroy({force:true});
                 // console.log("=================== " + Object.keys(Connection.connections()).length)
                 test.equal(0, Object.keys(Connection.connections()).length);
                 Connection.disableConnectionAccounting();
@@ -181,7 +181,7 @@ exports['Should correctly authenticate server using scram-sha-1 using auth metho
   test: function(configuration, test) {
     var Server = require('../../../lib/topologies/server')
       , Connection = require('../../../lib/connection/connection')
-      , bson = require('bson').BSONPure.BSON
+      , bson = require('bson')
       , Query = require('../../../lib/connection/commands').Query;
 
     // Enable connections accounting
@@ -221,7 +221,7 @@ exports['Should correctly authenticate server using scram-sha-1 using auth metho
                 test.equal(5, server.s.pool.socketCount());
                 test.equal(false, error);
 
-                server.destroy();
+                server.destroy({force:true});
                 // console.log("=================== " + Object.keys(Connection.connections()).length)
                 test.equal(0, Object.keys(Connection.connections()).length);
                 Connection.disableConnectionAccounting();
@@ -266,7 +266,7 @@ exports['Should correctly authenticate server using scram-sha-1 using connect au
   test: function(configuration, test) {
     var Server = require('../../../lib/topologies/server')
       , Connection = require('../../../lib/connection/connection')
-      , bson = require('bson').BSONPure.BSON
+      , bson = require('bson')
       , Query = require('../../../lib/connection/commands').Query;
 
     // Enable connections accounting
@@ -304,7 +304,7 @@ exports['Should correctly authenticate server using scram-sha-1 using connect au
                   _server.insert('test.test', [{a:1}], function(err, r) {
                     test.ok(err != null);
 
-                    _server.destroy();
+                    _server.destroy({force:true});
                     // console.log("=================== " + Object.keys(Connection.connections()).length)
                     test.equal(0, Object.keys(Connection.connections()).length);
                     // console.log("============================ 5")
@@ -330,7 +330,7 @@ exports['Should correctly have server auth wait for logout to finish'] = {
   test: function(configuration, test) {
     var Server = require('../../../lib/topologies/server')
       , Connection = require('../../../lib/connection/connection')
-      , bson = require('bson').BSONPure.BSON
+      , bson = require('bson')
       , Query = require('../../../lib/connection/commands').Query;
 
     // Enable connections accounting
@@ -371,7 +371,7 @@ exports['Should correctly have server auth wait for logout to finish'] = {
                   _server.insert('test.test', [{a:1}], function(err, r) {
                     test.equal(null, err);
 
-                    _server.destroy();
+                    _server.destroy({force:true});
                     // console.log("=================== " + Object.keys(Connection.connections()).length)
                     test.equal(0, Object.keys(Connection.connections()).length);
                     Connection.disableConnectionAccounting();

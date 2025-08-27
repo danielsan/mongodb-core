@@ -1,5 +1,7 @@
 "use strict";
 
+require('bson')
+
 var Runner = require('integra').Runner
   , Cover = require('integra').Cover
   , RCover = require('integra').RCover
@@ -117,10 +119,10 @@ var Configuration = function(options) {
             console.log("[connecting to topology]");
             server.connect();
           }).catch(function(err) {
-            console.log(err.stack);
+            // console.log(err.stack);
           });
         }).catch(function(err) {
-          console.log(err.stack);
+          // console.log(err.stack);
         });
       },
 
@@ -189,31 +191,48 @@ var Configuration = function(options) {
 
 // Set up the runner
 var runner = new Runner({
-    logLevel:'info'
+    logLevel:'error'
   , runners: 1
   , failFast: true
 });
 
-var testFiles = [
+var testFiles = [];
+
+try {
+  eval("(function *(){})");
+
   // Functional tests
-  '/test/tests/functional/pool_tests.js',
-  '/test/tests/functional/server_tests.js',
-  '/test/tests/functional/cursor_tests.js',
-  '/test/tests/functional/extend_cursor_tests.js',
-  '/test/tests/functional/undefined_tests.js',
-  '/test/tests/functional/tailable_cursor_tests.js',
-  '/test/tests/functional/error_tests.js',
-  '/test/tests/functional/operations_tests.js',
-  '/test/tests/functional/operation_example_tests.js',
-  '/test/tests/functional/basic_single_server_auth_tests.js',
-  '/test/tests/functional/basic_replset_server_auth_tests.js',
-  '/test/tests/functional/replset_tests.js',
-  // Replicaset SDAM tests
-  '/test/tests/functional/replset_state_tests.js',
-  // Replicaset Server selection tests
-  '/test/tests/functional/replset_server_selection_tests.js',
-  '/test/tests/functional/mongos_server_selection_tests.js'
-]
+  testFiles.push('/test/tests/functional/pool_tests.js')
+} catch(err) {}
+
+// Functional tests
+testFiles.push('/test/tests/functional/server_tests.js');
+testFiles.push('/test/tests/functional/cursor_tests.js');
+testFiles.push('/test/tests/functional/extend_cursor_tests.js');
+testFiles.push('/test/tests/functional/undefined_tests.js');
+testFiles.push('/test/tests/functional/tailable_cursor_tests.js');
+testFiles.push('/test/tests/functional/error_tests.js');
+testFiles.push('/test/tests/functional/operations_tests.js');
+testFiles.push('/test/tests/functional/operation_example_tests.js');
+testFiles.push('/test/tests/functional/basic_single_server_auth_tests.js');
+testFiles.push('/test/tests/functional/basic_replset_server_auth_tests.js');
+testFiles.push('/test/tests/functional/replset_tests.js');
+
+// Replicaset monitoring tests
+testFiles.push('/test/tests/functional/monitoring_tests.js');
+
+// Replicaset SDAM tests
+testFiles.push('/test/tests/functional/replset_state_tests.js');
+
+// Replicaset Server selection tests
+testFiles.push('/test/tests/functional/replset_server_selection_tests.js');
+testFiles.push('/test/tests/functional/mongos_server_selection_tests.js');
+
+// Replicaset max staleness tests
+testFiles.push('/test/tests/functional/max_staleness_tests.js');
+
+// Client Metadata test
+testFiles.push('/test/tests/functional/client_metadata_tests.js');
 
 // Check if we support es6 generators
 try {
@@ -231,6 +250,9 @@ try {
   testFiles.push('/test/tests/functional/rs_mocks/read_preferences_tests.js');
   testFiles.push('/test/tests/functional/rs_mocks/monitoring_tests.js');
   testFiles.push('/test/tests/functional/rs_mocks/maintanance_mode_tests.js');
+  testFiles.push('/test/tests/functional/rs_mocks/operation_tests.js');
+  testFiles.push('/test/tests/functional/rs_mocks/no_primary_found_tests.js');
+  testFiles.push('/test/tests/functional/rs_mocks/primary_loses_network_tests.js');
 
   // SDAM Tests
   testFiles.push('/test/tests/functional/sdam_monitoring_mocks/single_topology_tests.js');
@@ -241,6 +263,7 @@ try {
   testFiles.push('/test/tests/functional/mongos_mocks/multiple_proxies_tests.js');
   testFiles.push('/test/tests/functional/mongos_mocks/proxy_failover_tests.js');
   testFiles.push('/test/tests/functional/mongos_mocks/proxy_read_preference_tests.js');
+  testFiles.push('/test/tests/functional/mongos_mocks/mixed_seed_list_tests.js');
 } catch(err) {}
 
 // Add all the tests to run
@@ -272,8 +295,12 @@ testFiles.forEach(function(t) {
 
 // Add a Node version plugin
 runner.plugin(new NodeVersionFilter(startupOptions));
-// Add a MongoDB version plugin
-runner.plugin(new MongoDBVersionFilter(startupOptions));
+
+if (!argv.s) {
+  // Add a MongoDB version plugin
+  runner.plugin(new MongoDBVersionFilter(startupOptions));
+}
+
 // Add a Topology filter plugin
 runner.plugin(new MongoDBTopologyFilter(startupOptions));
 // Add a Filter allowing us to specify that a function requires Promises

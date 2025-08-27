@@ -6,12 +6,12 @@ var f = require('util').format,
 
 exports['Should iterate cursor'] = {
   metadata: {
-    requires: { topology: ["single", "replicaset", "mongos"] }
+    requires: { topology: ["single", "replicaset", "sharded"] }
   },
 
   test: function(configuration, test) {
     var Server = require('../../../lib/topologies/server')
-      , bson = require('bson').BSONPure.BSON;
+      , bson = require('bson');
 
     // Attempt to connect
     var server = new Server({
@@ -62,12 +62,12 @@ exports['Should iterate cursor'] = {
 
 exports['Should iterate cursor but readBuffered'] = {
   metadata: {
-    requires: { topology: ["single", "replicaset", "mongos"] }
+    requires: { topology: ["single", "replicaset", "sharded"] }
   },
 
   test: function(configuration, test) {
     var Server = require('../../../lib/topologies/server')
-      , bson = require('bson').BSONPure.BSON;
+      , bson = require('bson');
 
     // Attempt to connect
     var server = new Server({
@@ -121,12 +121,12 @@ exports['Should iterate cursor but readBuffered'] = {
 
 exports['Should callback exhausted cursor with error'] = {
   metadata: {
-    requires: { topology: ["single", "replicaset", "mongos"] }
+    requires: { topology: ["single", "replicaset", "sharded"] }
   },
 
   test: function(configuration, test) {
     var Server = require('../../../lib/topologies/server')
-      , bson = require('bson').BSONPure.BSON;
+      , bson = require('bson');
 
     // Attempt to connect
     var server = new Server({
@@ -176,12 +176,12 @@ exports['Should callback exhausted cursor with error'] = {
 
 exports['Should force a getMore call to happen'] = {
   metadata: {
-    requires: { topology: ["single", "replicaset", "mongos"] }
+    requires: { topology: ["single", "replicaset", "sharded"] }
   },
 
   test: function(configuration, test) {
     var Server = require('../../../lib/topologies/server')
-      , bson = require('bson').BSONPure.BSON;
+      , bson = require('bson');
 
     // Attempt to connect
     var server = new Server({
@@ -231,12 +231,12 @@ exports['Should force a getMore call to happen'] = {
 
 exports['Should force a getMore call to happen then call killCursor'] = {
   metadata: {
-    requires: { topology: ["single", "replicaset", "mongos"] }
+    requires: { topology: ["single", "replicaset", "sharded"] }
   },
 
   test: function(configuration, test) {
     var Server = require('../../../lib/topologies/server')
-      , bson = require('bson').BSONPure.BSON;
+      , bson = require('bson');
 
     // Attempt to connect
     var server = new Server({
@@ -291,12 +291,12 @@ exports['Should force a getMore call to happen then call killCursor'] = {
 
 exports['Should force a getMore call to happen then call killCursor'] = {
   metadata: {
-    requires: { topology: ["single", "replicaset", "mongos"] }
+    requires: { topology: ["single", "replicaset", "sharded"] }
   },
 
   test: function(configuration, test) {
     var Server = require('../../../lib/topologies/server')
-      , bson = require('bson').BSONPure.BSON;
+      , bson = require('bson');
 
     // Attempt to connect
     var server = new Server({
@@ -356,7 +356,7 @@ exports['Should fail cursor correctly after server restart'] = {
 
   test: function(configuration, test) {
     var Server = require('../../../lib/topologies/server')
-      , bson = require('bson').BSONPure.BSON;
+      , bson = require('bson');
 
     // Attempt to connect
     var server = new Server({
@@ -415,7 +415,7 @@ exports['Should finish cursor correctly after all sockets to pool destroyed'] = 
 
   test: function(configuration, test) {
     var Server = require('../../../lib/topologies/server')
-      , bson = require('bson').BSONPure.BSON;
+      , bson = require('bson');
 
     // Attempt to connect
     var server = new Server({
@@ -467,7 +467,125 @@ exports['Should finish cursor correctly after all sockets to pool destroyed'] = 
         });
       });
     })
- 
+
+    // Start connection
+    server.connect();
+  }
+};
+
+exports['Should not hang if autoReconnect=false and pools sockets all timed out'] = {
+  metadata: {
+    requires: { topology: ["single"] }
+  },
+
+  test: function(configuration, test) {
+    var Server = require('../../../lib/topologies/server')
+      , bson = require('bson');
+
+    // Attempt to connect
+    var server = new Server({
+      host: configuration.host,
+      port: configuration.port,
+      bson: new bson(),
+      // Nasty edge case: small timeout, small pool, no auto reconnect
+      socketTimeout: 100,
+      size: 1,
+      reconnect: false
+    });
+
+    var ns = f("%s.cursor7", configuration.db);
+    // Add event listeners
+    server.on('connect', function(_server) {
+      // Execute the write
+      _server.insert(ns, [{a:1}], {
+        writeConcern: {w:1}, ordered:true
+      }, function(err, results) {
+        test.equal(null, err);
+        test.equal(1, results.result.n);
+
+        // Execute slow find
+        var cursor = _server.cursor(ns, {
+          find: ns,
+          query: { $where: 'sleep(250) || true' },
+          batchSize: 1
+        });
+
+        // Execute next
+        cursor.next(function(err, doc) {
+          test.ok(err);
+
+          cursor = _server.cursor(ns, {
+            find: ns,
+            query: {},
+            batchSize: 1
+          });
+
+          cursor.next(function(err) {
+            test.ok(err);
+            test.done();
+          });
+        });
+      });
+    })
+
+    // Start connection
+    server.connect();
+  }
+};
+
+exports['Should not leak connnection workItem elements when using killCursor'] = {
+  metadata: {
+    requires: { topology: ["single", "replicaset", "sharded"] }
+  },
+
+  test: function(configuration, test) {
+    var Server = require('../../../lib/topologies/server')
+      , bson = require('bson');
+
+    // Attempt to connect
+    var server = new Server({
+      host: configuration.host, port: configuration.port, bson: new bson()
+    });
+
+    var ns = f("%s.cursor4", configuration.db);
+    // Add event listeners
+    server.on('connect', function(_server) {
+      // Execute the write
+      _server.insert(ns, [{a:1}, {a:2}, {a:3}], {
+        writeConcern: {w:1}, ordered:true
+      }, function(err, results) {
+        test.equal(null, err);
+        test.equal(3, results.result.n);
+
+        // Execute find
+        var cursor = _server.cursor(ns, { find: ns, query: {}, batchSize: 2 });
+
+        // Execute next
+        cursor.next(function(err, d) {
+          test.equal(null, err);
+          test.equal(1, d.a);
+
+          // Kill cursor
+          cursor.kill(function() {
+
+            // Add a small delay so that the work can be queued after the kill
+            // callback has executed
+            setImmediate(function () {
+              var connections = _server.s.pool.allConnections();
+              for(var i = 0; i < connections.length; i++) {
+                test.equal(0, connections[i].workItems.length);
+              };
+
+              // Destroy the server connection
+              _server.destroy();
+              // Finish the test
+              test.done();
+            }, 100);
+          });
+        });
+      });
+    });
+
     // Start connection
     server.connect();
   }
